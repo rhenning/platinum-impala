@@ -45,9 +45,34 @@ class HelloWorkflow
     puts "#{__method__}>> completed"
   end
 
-  ### i thought this would work, and it does... sometimes.
-  ###
-  ### others, it throws:
+  ### i thought something like this would work, but it causes a race and blows up.
+  ### best i can tell,  it's getting confused about running parallel copies of the
+  ### same activity.  this has real use cases...what if a subactivity has some un-
+  ### known number of similar parts that can be processed in parallel?
+  #
+  # futures = rand(1..MAX_ASYNC_JOBS).times.collect do
+  #   hello_activities.send_async(:true_random_activity, rand(1..MAX_ASYNC_TIME))
+  # end
+
+  ### a more elaborate but still broken version w/ err handling
+  #
+  # futures = []
+  # rand(1..MAX_ASYNC_JOBS).times do
+  #   error_handler do |t|
+  #     t.begin do
+  #       futures << hello_activities.send_async(:true_random_activity, rand(1..MAX_ASYNC_TIME))
+  #     end
+  #     t.rescue Exception do |e|
+  #       puts "Caught exception #{e.class}: #{e.message}"
+  #       puts e.backtrace.inspect
+  #     end
+  #     t.ensure do
+  #       #cleanup
+  #     end
+  #   end
+  # end
+
+  ### backtrace from aforementioned issue for reference:
 
   # 01:28:30 workflow_worker.1 | async_workflow_to_completion>> fired
   # 01:28:30 workflow_worker.1 | /Users/rhenning/.rbenv/versions/1.9.3-p125/lib/ruby/gems/1.9.1/gems/aws-flow-1.0.5/lib/aws/decider/async_decider.rb:378:in `handle_activity_task_scheduled': undefined method `consume' for nil:NilClass (NoMethodError)
@@ -69,32 +94,10 @@ class HelloWorkflow
     puts "#{__method__}>> fired"
     hello_activities.true_activity(args)
 
-    # futures = rand(1..MAX_ASYNC_JOBS).times.collect do
-    #   hello_activities.send_async(:true_random_activity, rand(1..MAX_ASYNC_TIME))
-    # end
-
     futures = MAX_ASYNC_JOBS.times.collect do |i|
       puts "#{__method__}>> send_async: true_random_activity_#{i}"
       hello_activities.send_async("true_random_activity_#{i}".to_sym, rand(1..MAX_ASYNC_TIME))
     end
-
-    ### more elaborate w/ err handling - doesn't help
-    # futures = []
-    # rand(1..MAX_ASYNC_JOBS).times do
-    #   error_handler do |t|
-    #     t.begin do
-    #       futures << hello_activities.send_async(:true_random_activity, rand(1..MAX_ASYNC_TIME))
-    #     end
-    #     t.rescue Exception do |e|
-    #       puts "Caught exception #{e.class}: #{e.message}"
-    #       puts e.backtrace.inspect
-    #     end
-    #     t.ensure do
-    #       #cleanup
-    #     end
-    #   end
-    # end
-    #puts "futures: #{futures.inspect}"
 
     wait_for_all(futures)
     puts "#{__method__}>> completed"
