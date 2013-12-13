@@ -1,0 +1,2 @@
+activity_worker: ruby hello_activity.rb
+workflow_worker: ruby hello_workflow.rb
