@@ -3,17 +3,19 @@ require_relative "utils"
 class HelloActivity
   extend AWS::Flow::Activities
 
-  FLOW_VERSION = "0.19"
+  FLOW_VERSION = "0.23"
   TASK_TIMEOUT = 30
   ZZZ_TIME = 45
+
+  random_activities = 10.times.collect { |i| "true_random_activity_#{i}".to_sym }  
 
   my_activities = :true_activity,
                   :another_true_activity,
                   :false_activity,
-                  :true_random_activity,
                   :true_slow_activity,
                   :false_slow_activity,
-                  :exceptional_activity
+                  :exceptional_activity,
+                  *random_activities
 
   activity *my_activities do |opts|
     opts.version = FLOW_VERSION
@@ -47,13 +49,15 @@ class HelloActivity
     false
   end
 
-  def true_random_activity(args)
-    puts "#{__method__}>> fired"
-    puts "#{__method__}>> allotted runtime #{TASK_TIMEOUT}"
-    puts "#{__method__}>> args: #{args.inspect}"
-    puts "#{__method__}>> sleeping for #{args}s"
-    sleep args
-    true
+  random_activities.each do |meth|
+    define_method meth do |args|
+      puts "#{__method__}>> fired"
+      puts "#{__method__}>> allotted runtime #{TASK_TIMEOUT}"
+      puts "#{__method__}>> args: #{args.inspect}"
+      puts "#{__method__}>> sleeping for #{args}s"
+      sleep args
+      true
+    end
   end
 
   def true_slow_activity(args)

@@ -4,9 +4,9 @@ require_relative "hello_activity"
 class HelloWorkflow
   extend AWS::Flow::Workflows
 
-  FLOW_VERSION = "0.19"
-  MAX_ASYNC_JOBS = 4
-  MAX_ASYNC_TIME = 5
+  FLOW_VERSION = "0.23"
+  MAX_ASYNC_JOBS = 10
+  MAX_ASYNC_TIME = 15
 
   workflow :async_workflow_to_completion do |opts|
     opts.version = FLOW_VERSION
@@ -68,9 +68,14 @@ class HelloWorkflow
   def async_workflow_to_completion(args)
     puts "#{__method__}>> fired"
     hello_activities.true_activity(args)
- 
-    futures = rand(1..MAX_ASYNC_JOBS).times.collect do
-      hello_activities.send_async(:true_random_activity, rand(1..MAX_ASYNC_TIME))
+
+    # futures = rand(1..MAX_ASYNC_JOBS).times.collect do
+    #   hello_activities.send_async(:true_random_activity, rand(1..MAX_ASYNC_TIME))
+    # end
+
+    futures = MAX_ASYNC_JOBS.times.collect do |i|
+      puts "#{__method__}>> send_async: true_random_activity_#{i}"
+      hello_activities.send_async("true_random_activity_#{i}".to_sym, rand(1..MAX_ASYNC_TIME))
     end
 
     ### more elaborate w/ err handling - doesn't help
@@ -89,7 +94,8 @@ class HelloWorkflow
     #     end
     #   end
     # end
-    puts "futures: #{futures.inspect}"
+    #puts "futures: #{futures.inspect}"
+
     wait_for_all(futures)
     puts "#{__method__}>> completed"
   end

@@ -5,5 +5,9 @@ workflow_client = AWS::Flow.workflow_client(@swf.client, @domain) do
   { from_class: "HelloWorkflow" }
 end
 
-puts "Firing Workflow..."
-e = workflow_client.start_execution("an argument string")
+
+if __FILE__ == $0
+  STDOUT.sync = true
+  puts "Firing Workflow..."
+  workflow_client.start_execution("just an argument string")
+end
