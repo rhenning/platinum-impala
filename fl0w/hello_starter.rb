@@ -9,5 +9,5 @@ end
 if __FILE__ == $0
   STDOUT.sync = true
   puts "Firing Workflow..."
-  workflow_client.start_execution("just an argument string")
+  workflow_client.start_execution(5)
 end
